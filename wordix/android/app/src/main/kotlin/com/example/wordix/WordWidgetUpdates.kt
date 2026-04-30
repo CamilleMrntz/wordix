@@ -41,24 +41,13 @@ internal object WordWidgetUpdates {
         appWidgetIds: IntArray,
         slot: String,
     ) {
-        val prefs = context.getSharedPreferences("WordixWidgetPrefs", Context.MODE_PRIVATE)
-        val word = readWord(prefs, slot)
-        val partOfSpeech = readPartOfSpeech(prefs, slot)
-
-        val launchIntent = Intent(context, MainActivity::class.java)
-        val launchPendingIntent = PendingIntent.getActivity(
-            context,
-            if (slot == SLOT_ES) 11 else 10,
-            launchIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        val listPiFlags = PendingIntent.FLAG_UPDATE_CURRENT or
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                PendingIntent.FLAG_MUTABLE
+            } else {
+                0
+            }
         for (appWidgetId in appWidgetIds) {
-            val listPiFlags = PendingIntent.FLAG_UPDATE_CURRENT or
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    PendingIntent.FLAG_MUTABLE
-                } else {
-                    0
-                }
             val listTemplateIntent = PendingIntent.getActivity(
                 context,
                 1000 + appWidgetId,
@@ -67,10 +56,6 @@ internal object WordWidgetUpdates {
             )
 
             val views = RemoteViews(context.packageName, R.layout.word_of_day_widget)
-            val flagRes = if (slot == SLOT_ES) R.string.widget_flag_es else R.string.widget_flag_en
-            views.setTextViewText(R.id.widget_flag, context.getString(flagRes))
-            views.setTextViewText(R.id.widget_word, word)
-            views.setTextViewText(R.id.widget_part_of_speech, partOfSpeech)
 
             val svcIntent = Intent(context, WordOfDayWidgetService::class.java).apply {
                 putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
@@ -79,10 +64,6 @@ internal object WordWidgetUpdates {
             }
             views.setRemoteAdapter(R.id.widget_definition_list, svcIntent)
 
-            views.setOnClickPendingIntent(R.id.widget_word_row, launchPendingIntent)
-            views.setOnClickPendingIntent(R.id.widget_flag, launchPendingIntent)
-            views.setOnClickPendingIntent(R.id.widget_word, launchPendingIntent)
-            views.setOnClickPendingIntent(R.id.widget_part_of_speech, launchPendingIntent)
             views.setPendingIntentTemplate(R.id.widget_definition_list, listTemplateIntent)
 
             appWidgetManager.updateAppWidget(appWidgetId, views)
