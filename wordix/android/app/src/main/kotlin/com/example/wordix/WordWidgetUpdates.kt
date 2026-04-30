@@ -67,8 +67,8 @@ internal object WordWidgetUpdates {
             )
 
             val views = RemoteViews(context.packageName, R.layout.word_of_day_widget)
-            val titleRes = if (slot == SLOT_ES) R.string.widget_header_es else R.string.widget_header_en
-            views.setTextViewText(R.id.widget_title, context.getString(titleRes))
+            val flagRes = if (slot == SLOT_ES) R.string.widget_flag_es else R.string.widget_flag_en
+            views.setTextViewText(R.id.widget_flag, context.getString(flagRes))
             views.setTextViewText(R.id.widget_word, word)
             views.setTextViewText(R.id.widget_part_of_speech, partOfSpeech)
 
@@ -79,7 +79,8 @@ internal object WordWidgetUpdates {
             }
             views.setRemoteAdapter(R.id.widget_definition_list, svcIntent)
 
-            views.setOnClickPendingIntent(R.id.widget_title, launchPendingIntent)
+            views.setOnClickPendingIntent(R.id.widget_word_row, launchPendingIntent)
+            views.setOnClickPendingIntent(R.id.widget_flag, launchPendingIntent)
             views.setOnClickPendingIntent(R.id.widget_word, launchPendingIntent)
             views.setOnClickPendingIntent(R.id.widget_part_of_speech, launchPendingIntent)
             views.setPendingIntentTemplate(R.id.widget_definition_list, listTemplateIntent)

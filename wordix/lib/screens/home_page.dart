@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/daily_word_tab.dart';
+import 'settings_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -20,24 +21,27 @@ class HomePage extends StatelessWidget {
           title: const Text('Word of the Day'),
           actions: [
             IconButton(
-              onPressed: () => FirebaseAuth.instance.signOut(),
-              icon: const Icon(Icons.logout),
+              tooltip: 'Paramètres',
+              onPressed: () {
+                Navigator.of(context).push<void>(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const SettingsPage(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.settings),
             ),
           ],
           bottom: const TabBar(
             tabs: [
-              Tab(text: 'Anglais'),
-              Tab(text: 'Espagnol'),
+              Tab(text: 'English'),
+              Tab(text: 'Español'),
             ],
           ),
         ),
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Text('Connecté: ${user.email ?? "inconnu"}'),
-            ),
             const Expanded(
               child: TabBarView(
                 children: [
@@ -45,16 +49,16 @@ class HomePage extends StatelessWidget {
                     langCode: 'en',
                     assetPath: 'assets/words_en.txt',
                     apiEntriesPath: 'en',
-                    titleDaily: 'Mot du jour (anglais)',
-                    titleRandom: 'Aléatoire (anglais)',
+                    titleDaily: 'Word of the day 🇬🇧',
+                    titleRandom: '🎲 Random word',
                     androidWidgetSlot: 'en',
                   ),
                   DailyWordTab(
                     langCode: 'es',
                     assetPath: 'assets/words_es.txt',
                     apiEntriesPath: 'es',
-                    titleDaily: 'Mot du jour (espagnol)',
-                    titleRandom: 'Aléatoire (espagnol)',
+                    titleDaily: 'Palabra del día 🇪🇸',
+                    titleRandom: '🎲 Palabra aleatoria',
                     androidWidgetSlot: 'es',
                   ),
                 ],

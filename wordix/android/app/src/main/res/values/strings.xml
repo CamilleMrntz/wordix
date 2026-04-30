@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">wordix</string>
-    <string name="widget_header_en">Mot du jour — Anglais</string>
-    <string name="widget_header_es">Mot du jour — Espagnol</string>
     <string name="widget_label_en">Wordix : anglais</string>
     <string name="widget_label_es">Wordix : espagnol</string>
     <string name="widget_description_en">Mot du jour et définition en anglais.</string>
     <string name="widget_description_es">Mot du jour et définition en espagnol.</string>
+    <!-- Same flag emojis as home (DailyWordTab titles). -->
+    <string name="widget_flag_en" translatable="false">🇬🇧</string>
+    <string name="widget_flag_es" translatable="false">🇪🇸</string>
 </resources>
