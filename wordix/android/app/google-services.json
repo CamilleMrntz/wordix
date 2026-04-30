@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "823537100827",
+    "project_id": "wordix-60d59",
+    "storage_bucket": "wordix-60d59.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:823537100827:android:877b9422540821126f70be",
+        "android_client_info": {
+          "package_name": "com.example.wordix"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "823537100827-vl1n8knk36phhtj38irsddm6brn00d1n.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.wordix",
+            "certificate_hash": "0ffda90347559edc86ee5da5278ddb8642e443fc"
+          }
+        },
+        {
+          "client_id": "823537100827-8j8jsarboqi9223sr8d8rb478jh4ui3i.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCYAKExMw25SXQIfKiysmN_xBwaXmYk3HQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "823537100827-8j8jsarboqi9223sr8d8rb478jh4ui3i.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "823537100827-fv05i4mvd9i1car6lhq6njc1egnpmot2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.wordix"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
