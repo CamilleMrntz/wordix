@@ -39,6 +39,7 @@ dependencies:
   cloud_firestore: ^6.0.3
   google_sign_in: ^7.2.0
   http: ^1.5.0
+  html: ^0.15.6
 
 dev_dependencies:
   flutter_test:
@@ -63,6 +64,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/words_en.txt
+    - assets/words_es.txt
 
   # To add assets to your application, add an assets section, like this:
   # assets:

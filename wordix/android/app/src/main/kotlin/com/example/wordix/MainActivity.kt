@@ -16,11 +16,16 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName)
             .setMethodCallHandler { call, result ->
                 if (call.method == "updateWordWidget") {
+                    val slot = call.argument<String>("slot") ?: "en"
+                    if (slot != "en" && slot != "es") {
+                        result.error("bad_slot", "slot must be en or es", null)
+                        return@setMethodCallHandler
+                    }
                     val word = call.argument<String>("word").orEmpty()
                     val partOfSpeech = call.argument<String>("partOfSpeech").orEmpty()
                     val definition = call.argument<String>("definition").orEmpty()
 
-                    updateWidgetData(word, partOfSpeech, definition)
+                    updateWidgetData(slot, word, partOfSpeech, definition)
                     result.success(null)
                 } else {
                     result.notImplemented()
@@ -28,17 +33,32 @@ class MainActivity : FlutterActivity() {
             }
     }
 
-    private fun updateWidgetData(word: String, partOfSpeech: String, definition: String) {
+    private fun updateWidgetData(slot: String, word: String, partOfSpeech: String, definition: String) {
         val prefs = applicationContext.getSharedPreferences("WordixWidgetPrefs", Context.MODE_PRIVATE)
-        prefs.edit()
-            .putString("word", word)
-            .putString("partOfSpeech", partOfSpeech)
-            .putString("definition", definition)
-            .apply()
+        val e = prefs.edit()
+        if (slot == "es") {
+            e.putString("word_es", word)
+                .putString("partOfSpeech_es", partOfSpeech)
+                .putString("definition_es", definition)
+        } else {
+            e.putString("word_en", word)
+                .putString("partOfSpeech_en", partOfSpeech)
+                .putString("definition_en", definition)
+                .putString("word", word)
+                .putString("partOfSpeech", partOfSpeech)
+                .putString("definition", definition)
+        }
+        e.apply()
 
         val appWidgetManager = AppWidgetManager.getInstance(applicationContext)
-        val componentName = ComponentName(applicationContext, WordOfDayWidgetProvider::class.java)
-        val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-        WordOfDayWidgetProvider.updateWidgets(applicationContext, appWidgetManager, appWidgetIds)
+        if (slot == "es") {
+            val componentName = ComponentName(applicationContext, WordOfDayEsWidgetProvider::class.java)
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+            WordOfDayEsWidgetProvider.updateWidgets(applicationContext, appWidgetManager, appWidgetIds)
+        } else {
+            val componentName = ComponentName(applicationContext, WordOfDayWidgetProvider::class.java)
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+            WordOfDayWidgetProvider.updateWidgets(applicationContext, appWidgetManager, appWidgetIds)
+        }
     }
 }
