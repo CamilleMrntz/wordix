@@ -38,6 +38,7 @@ dependencies:
   firebase_auth: ^6.4.0
   cloud_firestore: ^6.0.3
   google_sign_in: ^7.2.0
+  http: ^1.5.0
 
 dev_dependencies:
   flutter_test:
@@ -60,6 +61,8 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/words_en.txt
 
   # To add assets to your application, add an assets section, like this:
   # assets:
