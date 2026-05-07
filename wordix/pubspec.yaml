@@ -52,6 +52,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -97,3 +98,13 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# Regenerate launcher assets: dart run flutter_launcher_icons
+# Source image: assets/wordix_app_icon.png (see tool/generate_app_icon.ps1)
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/wordix_app_icon.png
+  remove_alpha_ios: true
+  adaptive_icon_background: "#146B5C"
+  adaptive_icon_foreground: assets/wordix_app_icon.png

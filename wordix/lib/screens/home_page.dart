@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../widgets/daily_word_tab.dart';
+import '../widgets/wordix_logo.dart';
 import 'settings_page.dart';
 import 'word_history_page.dart';
 
@@ -12,14 +13,25 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      return const Scaffold(body: Center(child: Text('Utilisateur non connecté')));
+      return Scaffold(
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              'Utilisateur non connecté',
+              style: Theme.of(context).textTheme.bodyLarge,
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      );
     }
 
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Word of the Day'),
+          title: const WordixLogo(height: 28),
           actions: [
             IconButton(
               tooltip: 'Historique des mots du jour',
@@ -46,8 +58,8 @@ class HomePage extends StatelessWidget {
           ],
           bottom: const TabBar(
             tabs: [
-              Tab(text: 'English'),
-              Tab(text: 'Español'),
+              Tab(child: Text('🇬🇧  English')),
+              Tab(child: Text('🇪🇸  Español')),
             ],
           ),
         ),

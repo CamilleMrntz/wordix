@@ -6,10 +6,14 @@ import android.content.Intent
 import android.graphics.Typeface
 import android.text.SpannableString
 import android.text.Spanned
+import android.text.style.ForegroundColorSpan
+import android.text.style.RelativeSizeSpan
 import android.text.style.StyleSpan
 import android.util.TypedValue
+import android.view.Gravity
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
+import androidx.annotation.DimenRes
 import androidx.core.content.ContextCompat
 
 class WordOfDayRemoteViewsFactory(
@@ -70,35 +74,79 @@ class WordOfDayRemoteViewsFactory(
         val fillIn = Intent()
         val row = rows.getOrNull(position) ?: Row(KIND_DEF, a = "")
         val views = RemoteViews(context.packageName, R.layout.word_of_day_widget_item)
+        val prevKind = rows.getOrNull(position - 1)?.kind
         when (row.kind) {
             KIND_WORD -> {
                 val line = "${row.a}\u00A0${row.b}"
                 val s = SpannableString(line)
-                s.setSpan(StyleSpan(Typeface.BOLD), 0, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                val primary = ContextCompat.getColor(context, R.color.widget_text_primary)
+                val flagLen = row.a.length
+                if (flagLen > 0) {
+                    s.setSpan(RelativeSizeSpan(0.9f), 0, flagLen, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                }
+                val wordStart = flagLen + 1
+                if (wordStart < s.length) {
+                    s.setSpan(StyleSpan(Typeface.BOLD), wordStart, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    s.setSpan(ForegroundColorSpan(primary), wordStart, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                } else if (s.isNotEmpty()) {
+                    s.setSpan(StyleSpan(Typeface.BOLD), 0, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    s.setSpan(ForegroundColorSpan(primary), 0, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                }
                 views.setTextViewText(R.id.widget_item_text, s)
-                views.setTextViewTextSize(R.id.widget_item_text, TypedValue.COMPLEX_UNIT_SP, 18f)
-                views.setTextColor(
+                views.setTextViewTextSize(R.id.widget_item_text, TypedValue.COMPLEX_UNIT_SP, 21f)
+                views.setTextColor(R.id.widget_item_text, primary)
+                views.setFloat(R.id.widget_item_text, "setLetterSpacing", 0.008f)
+                views.setInt(R.id.widget_item_text, "setBackgroundResource", R.drawable.widget_row_bg_transparent)
+                views.setViewPadding(
                     R.id.widget_item_text,
-                    ContextCompat.getColor(context, R.color.widget_text_primary),
+                    0,
+                    0,
+                    0,
+                    dimen(R.dimen.widget_word_bottom_pad),
                 )
             }
             KIND_POS -> {
                 val s = SpannableString(row.a)
                 s.setSpan(StyleSpan(Typeface.ITALIC), 0, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 views.setTextViewText(R.id.widget_item_text, s)
-                views.setTextViewTextSize(R.id.widget_item_text, TypedValue.COMPLEX_UNIT_SP, 12f)
+                views.setTextViewTextSize(R.id.widget_item_text, TypedValue.COMPLEX_UNIT_SP, 11.5f)
                 views.setTextColor(
                     R.id.widget_item_text,
-                    ContextCompat.getColor(context, R.color.widget_text_secondary),
+                    ContextCompat.getColor(context, R.color.widget_brand),
                 )
+                views.setFloat(R.id.widget_item_text, "setLetterSpacing", 0.04f)
+                views.setInt(R.id.widget_item_text, "setGravity", Gravity.START or Gravity.CENTER_VERTICAL)
+                views.setInt(R.id.widget_item_text, "setBackgroundResource", R.drawable.widget_pos_pill)
+                val ph = dimen(R.dimen.widget_pos_pad_h)
+                val pv = dimen(R.dimen.widget_pos_pad_v)
+                views.setViewPadding(R.id.widget_item_text, ph, pv, ph, pv)
             }
             else -> {
-                views.setTextViewText(R.id.widget_item_text, row.a)
-                views.setTextViewTextSize(R.id.widget_item_text, TypedValue.COMPLEX_UNIT_SP, 13f)
+                val empty = row.a.isEmpty()
+                val display = if (empty) context.getString(R.string.widget_empty_hint) else row.a
+                if (empty) {
+                    val s = SpannableString(display)
+                    val muted = ContextCompat.getColor(context, R.color.widget_text_muted)
+                    s.setSpan(StyleSpan(Typeface.ITALIC), 0, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    s.setSpan(ForegroundColorSpan(muted), 0, s.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                    views.setTextViewText(R.id.widget_item_text, s)
+                } else {
+                    views.setTextViewText(R.id.widget_item_text, display)
+                }
+                views.setTextViewTextSize(R.id.widget_item_text, TypedValue.COMPLEX_UNIT_SP, 15f)
                 views.setTextColor(
                     R.id.widget_item_text,
                     ContextCompat.getColor(context, R.color.widget_text_body),
                 )
+                views.setFloat(R.id.widget_item_text, "setLetterSpacing", 0.01f)
+                views.setInt(R.id.widget_item_text, "setBackgroundResource", R.drawable.widget_row_bg_transparent)
+                val top = when {
+                    empty -> dimen(R.dimen.widget_def_pad_v)
+                    prevKind == KIND_POS -> dimen(R.dimen.widget_def_pad_top_after_pos)
+                    else -> dimen(R.dimen.widget_def_pad_v)
+                }
+                val bottom = dimen(R.dimen.widget_def_pad_v)
+                views.setViewPadding(R.id.widget_item_text, 0, top, 0, bottom)
             }
         }
         views.setOnClickFillInIntent(R.id.widget_item_text, fillIn)
@@ -112,6 +160,8 @@ class WordOfDayRemoteViewsFactory(
     override fun getItemId(position: Int): Long = position.toLong()
 
     override fun hasStableIds(): Boolean = true
+
+    private fun dimen(@DimenRes id: Int): Int = context.resources.getDimensionPixelSize(id)
 
     private data class Row(val kind: Int, val a: String, val b: String = "")
 

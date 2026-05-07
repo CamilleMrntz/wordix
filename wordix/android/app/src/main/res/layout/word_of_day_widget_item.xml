@@ -3,8 +3,12 @@
     android:id="@+id/widget_item_text"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:fontFamily="sans-serif"
+    android:gravity="start|center_vertical"
     android:includeFontPadding="false"
-    android:lineSpacingExtra="2dp"
-    android:paddingBottom="4dp"
+    android:letterSpacing="0.01"
+    android:lineSpacingExtra="4dp"
+    android:lineSpacingMultiplier="1.05"
+    android:paddingBottom="2dp"
     android:textColor="@color/widget_text_body"
-    android:textSize="13sp" />
+    android:textSize="15sp" />

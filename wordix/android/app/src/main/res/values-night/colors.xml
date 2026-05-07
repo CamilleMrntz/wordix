@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="widget_card_background">#1F2937</color>
-    <color name="widget_text_primary">#F9FAFB</color>
-    <color name="widget_text_secondary">#9CA3AF</color>
-    <color name="widget_text_body">#D1D5DB</color>
-    <color name="widget_border">#374151</color>
+    <color name="widget_brand">#5DD5C4</color>
+    <color name="widget_brand_soft">#7AE0D2</color>
+    <color name="widget_card_background">#141C1A</color>
+    <color name="widget_text_primary">#F4FBF9</color>
+    <color name="widget_text_secondary">#9CB8B0</color>
+    <color name="widget_text_body">#C5D9D3</color>
+    <color name="widget_text_muted">#7A9A91</color>
+    <color name="widget_border">#2A3F39</color>
+    <color name="widget_pos_pill_bg">#1C322C</color>
 </resources>

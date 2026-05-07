@@ -8,4 +8,6 @@
     <!-- Same flag emojis as home (DailyWordTab titles). -->
     <string name="widget_flag_en" translatable="false">🇬🇧</string>
     <string name="widget_flag_es" translatable="false">🇪🇸</string>
+    <string name="widget_header_title" translatable="false">Wordix</string>
+    <string name="widget_empty_hint">Ouvre l’app pour charger le mot du jour.</string>
 </resources>

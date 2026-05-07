@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../widgets/lexicon_blocks.dart';
+
 /// Same language markers as [DailyWordTab] titles (🇬🇧 / 🇪🇸).
 String _langFlagEmoji(String lang) {
   switch (lang) {
@@ -137,7 +139,7 @@ class _WordHistoryPageState extends State<WordHistoryPage> {
 
           return RefreshIndicator(
             onRefresh: _reload,
-            child: ListView.separated(
+            child: ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.fromLTRB(
                 16,
@@ -146,51 +148,88 @@ class _WordHistoryPageState extends State<WordHistoryPage> {
                 16 + MediaQuery.viewPaddingOf(context).bottom,
               ),
               itemCount: items.length,
-              separatorBuilder: (_, _) => const Divider(height: 1),
               itemBuilder: (context, i) {
                 final e = items[i];
-                return ListTile(
-                  contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                  leading: CircleAvatar(
-                    backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    child: Text(
-                      _langFlagEmoji(e.lang),
-                      style: const TextStyle(fontSize: 22, height: 1.05),
+                final theme = Theme.of(context);
+                final scheme = theme.colorScheme;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CircleAvatar(
+                                radius: 22,
+                                backgroundColor: scheme.primaryContainer.withValues(alpha: 0.65),
+                                child: Text(
+                                  _langFlagEmoji(e.lang),
+                                  style: const TextStyle(fontSize: 22, height: 1.05),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            e.word,
+                                            style: theme.textTheme.titleMedium?.copyWith(
+                                              fontWeight: FontWeight.w700,
+                                              letterSpacing: -0.2,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: scheme.secondaryContainer.withValues(alpha: 0.55),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Text(
+                                            _formatDateKey(e.dateKey),
+                                            style: theme.textTheme.labelMedium?.copyWith(
+                                              color: scheme.onSecondaryContainer,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    if (e.partOfSpeech != null && e.partOfSpeech!.isNotEmpty) ...[
+                                      const SizedBox(height: 8),
+                                      LexiconPosBadge(text: e.partOfSpeech!),
+                                    ],
+                                    const SizedBox(height: 10),
+                                    LexiconDefinitionPanel(
+                                      child: Text(
+                                        e.definition,
+                                        maxLines: 5,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: theme.textTheme.bodyMedium?.copyWith(
+                                          height: 1.45,
+                                          color: scheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  title: Text(
-                    e.word,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (e.partOfSpeech != null && e.partOfSpeech!.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          e.partOfSpeech!,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                fontStyle: FontStyle.italic,
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                        ),
-                      ],
-                      const SizedBox(height: 6),
-                      Text(
-                        e.definition,
-                        maxLines: 5,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
-                  trailing: Text(
-                    _formatDateKey(e.dateKey),
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                  ),
-                  isThreeLine: true,
                 );
               },
             ),

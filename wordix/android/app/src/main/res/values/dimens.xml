@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="widget_corner_radius">20dp</dimen>
+    <dimen name="widget_word_bottom_pad">10dp</dimen>
+    <dimen name="widget_pos_pad_h">12dp</dimen>
+    <dimen name="widget_pos_pad_v">5dp</dimen>
+    <dimen name="widget_def_pad_v">4dp</dimen>
+    <dimen name="widget_def_pad_top_after_pos">8dp</dimen>
+</resources>

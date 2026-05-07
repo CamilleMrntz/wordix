@@ -10,6 +10,8 @@ import 'package:html/parser.dart' as html_parser;
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
+import 'lexicon_blocks.dart';
+
 /// One language tab: word of the day (deterministic + Firestore cache) + random word.
 class DailyWordTab extends StatefulWidget {
   const DailyWordTab({
@@ -351,6 +353,13 @@ class _DailyWordTabState extends State<DailyWordTab> with AutomaticKeepAliveClie
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final defStyle = theme.textTheme.bodyLarge?.copyWith(
+      height: 1.55,
+      color: scheme.onSurfaceVariant,
+    );
+
     return SafeArea(
       top: false,
       left: false,
@@ -359,77 +368,219 @@ class _DailyWordTabState extends State<DailyWordTab> with AutomaticKeepAliveClie
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _LexiconSection(
+              icon: Icons.wb_sunny_outlined,
+              title: widget.titleDaily,
+              child: _buildDailyBody(theme, scheme, defStyle),
+            ),
+            const SizedBox(height: 14),
+            _LexiconSection(
+              icon: Icons.shuffle,
+              title: widget.titleRandom,
+              child: _buildRandomBody(theme, scheme, defStyle),
+            ),
+            const SizedBox(height: 18),
+            FilledButton.icon(
+              onPressed: isLoadingDaily || isLoadingRandom ? null : _loadRandomWord,
+              icon: const Icon(Icons.casino_outlined),
+              label: const Text('Nouveau mot'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDailyBody(ThemeData theme, ColorScheme scheme, TextStyle? defStyle) {
+    if (isLoadingDaily) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 28),
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
+      );
+    }
+    if (error != null) {
+      return _InlineError(message: error!);
+    }
+    if (dailyWord == null) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          Text(
-            widget.titleDaily,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          if (isLoadingDaily) const CircularProgressIndicator(),
-          if (!isLoadingDaily && error != null) Text(error!, style: const TextStyle(color: Colors.red)),
-          if (!isLoadingDaily && error == null && dailyWord != null) ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Text(
-                    dailyWord!,
-                    style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
-                  ),
+            Expanded(
+              child: Text(
+                dailyWord!,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.6,
+                  color: scheme.onSurface,
                 ),
-                _GoogleWordSearchButton(word: dailyWord!),
-              ],
-            ),
-            if (dailyPartOfSpeech != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                dailyPartOfSpeech!,
-                style: const TextStyle(fontStyle: FontStyle.italic),
               ),
-            ],
-            const SizedBox(height: 8),
-            Text(dailyDefinition ?? ''),
+            ),
+            _GoogleWordSearchButton(word: dailyWord!),
           ],
-          const SizedBox(height: 20),
-          const Divider(),
-          const SizedBox(height: 12),
-          Text(
-            widget.titleRandom,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          if (isLoadingRandom) const CircularProgressIndicator(),
-          if (!isLoadingRandom && randomWord != null) ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Text(
-                    randomWord!,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
+        ),
+        if (dailyPartOfSpeech != null) ...[
+          const SizedBox(height: 10),
+          LexiconPosBadge(text: dailyPartOfSpeech!),
+        ],
+        const SizedBox(height: 12),
+        LexiconDefinitionPanel(
+          child: SelectableText(dailyDefinition ?? '', style: defStyle ?? theme.textTheme.bodyLarge),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRandomBody(ThemeData theme, ColorScheme scheme, TextStyle? defStyle) {
+    if (isLoadingRandom) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 28),
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
+      );
+    }
+    if (randomWord == null) {
+      return DecoratedBox(
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainerHighest.withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.auto_awesome_outlined, size: 20, color: scheme.primary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Choisis « Nouveau mot » pour en tirer un au hasard.',
+                  style: theme.textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant, height: 1.45),
                 ),
-                _GoogleWordSearchButton(word: randomWord!),
-              ],
-            ),
-            if (randomPartOfSpeech != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                randomPartOfSpeech!,
-                style: const TextStyle(fontStyle: FontStyle.italic),
               ),
             ],
-            const SizedBox(height: 8),
-            Text(randomDefinition ?? ''),
+          ),
+        ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(
+                randomWord!,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.4,
+                ),
+              ),
+            ),
+            _GoogleWordSearchButton(word: randomWord!),
+          ],
+        ),
+        if (randomPartOfSpeech != null) ...[
+          const SizedBox(height: 8),
+          LexiconPosBadge(text: randomPartOfSpeech!),
+        ],
+        const SizedBox(height: 12),
+        LexiconDefinitionPanel(
+          child: SelectableText(randomDefinition ?? '', style: defStyle ?? theme.textTheme.bodyLarge),
+        ),
+      ],
+    );
+  }
+}
+
+class _LexiconSection extends StatelessWidget {
+  const _LexiconSection({
+    required this.icon,
+    required this.title,
+    required this.child,
+  });
+
+  final IconData icon;
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 18, 16, 18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: scheme.primaryContainer.withValues(alpha: 0.65),
+                  child: Icon(icon, size: 20, color: scheme.primary),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
+            Divider(height: 1, color: scheme.outlineVariant.withValues(alpha: 0.45)),
+            const SizedBox(height: 14),
+            child,
           ],
-          ElevatedButton(
-            onPressed: isLoadingDaily || isLoadingRandom ? null : _loadRandomWord,
-            child: const Text('Nouveau mot'),
+        ),
+      ),
+    );
+  }
+}
+
+class _InlineError extends StatelessWidget {
+  const _InlineError({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.errorContainer,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: scheme.error.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.error_outline, color: scheme.onErrorContainer, size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: scheme.onErrorContainer,
+                    height: 1.35,
+                  ),
+            ),
           ),
         ],
-        ),
       ),
     );
   }
@@ -464,46 +615,56 @@ class _GoogleWordSearchButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return IconButton(
-      tooltip: 'Rechercher sur Google',
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-      constraints: const BoxConstraints(minWidth: 48, minHeight: 44),
-      onPressed: () => _open(context),
-      icon: Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: Image.network(
-              _gLogoUrl,
-              width: 28,
-              height: 28,
-              fit: BoxFit.contain,
-              gaplessPlayback: true,
-              errorBuilder: (_, _, _) => Container(
-                width: 28,
-                height: 28,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHighest,
+    return Material(
+      color: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _open(context),
+        borderRadius: BorderRadius.circular(12),
+        child: Tooltip(
+          message: 'Rechercher sur Google',
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                ClipRRect(
                   borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  'G',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15,
-                    color: scheme.primary,
-                    height: 1,
+                  child: Image.network(
+                    _gLogoUrl,
+                    width: 28,
+                    height: 28,
+                    fit: BoxFit.contain,
+                    gaplessPlayback: true,
+                    errorBuilder: (_, _, _) => Container(
+                      width: 28,
+                      height: 28,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: scheme.surface,
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
+                      ),
+                      child: Text(
+                        'G',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 15,
+                          color: scheme.primary,
+                          height: 1,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(width: 6),
+                Icon(Icons.arrow_forward_rounded, size: 21, color: scheme.onSurfaceVariant),
+              ],
             ),
           ),
-          const SizedBox(width: 6),
-          Icon(Icons.arrow_forward, size: 22, color: scheme.onSurfaceVariant),
-        ],
+        ),
       ),
     );
   }

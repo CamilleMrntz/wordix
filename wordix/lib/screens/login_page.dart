@@ -3,6 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import '../widgets/wordix_logo.dart';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -92,42 +94,114 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Connexion')),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Email')),
-            TextField(
-              controller: passCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Mot de passe'),
+      appBar: AppBar(
+        title: const Text('Connexion'),
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(22, 26, 22, 22),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Center(child: WordixLogo(height: 36)),
+                      const SizedBox(height: 14),
+                      Text(
+                        'Connecte-toi pour suivre ton mot du jour.',
+                        textAlign: TextAlign.center,
+                        style: textTheme.bodyMedium?.copyWith(color: scheme.onSurfaceVariant, height: 1.35),
+                      ),
+                      const SizedBox(height: 24),
+                      TextField(
+                        controller: emailCtrl,
+                        keyboardType: TextInputType.emailAddress,
+                        textInputAction: TextInputAction.next,
+                        decoration: const InputDecoration(labelText: 'E-mail'),
+                      ),
+                      const SizedBox(height: 14),
+                      TextField(
+                        controller: passCtrl,
+                        obscureText: true,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: (_) {
+                          if (!isLoading) signIn();
+                        },
+                        decoration: const InputDecoration(labelText: 'Mot de passe'),
+                      ),
+                      const SizedBox(height: 22),
+                      FilledButton(
+                        onPressed: isLoading ? null : signIn,
+                        child: const Text('Se connecter'),
+                      ),
+                      const SizedBox(height: 10),
+                      TextButton(
+                        onPressed: isLoading ? null : signUp,
+                        child: const Text('Créer un compte'),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Expanded(child: Divider(color: scheme.outlineVariant.withValues(alpha: 0.6))),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text('ou', style: textTheme.labelMedium?.copyWith(color: scheme.onSurfaceVariant)),
+                          ),
+                          Expanded(child: Divider(color: scheme.outlineVariant.withValues(alpha: 0.6))),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      OutlinedButton.icon(
+                        onPressed: isLoading ? null : signInWithGoogle,
+                        icon: const Icon(Icons.login),
+                        label: const Text('Continuer avec Google'),
+                      ),
+                      if (isLoading) ...[
+                        const SizedBox(height: 20),
+                        const Center(child: CircularProgressIndicator(strokeWidth: 2.5)),
+                      ],
+                      if (error != null) ...[
+                        const SizedBox(height: 16),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: scheme.errorContainer,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: scheme.error.withValues(alpha: 0.2)),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.error_outline, size: 20, color: scheme.onErrorContainer),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  error!,
+                                  style: textTheme.bodySmall?.copyWith(
+                                    color: scheme.onErrorContainer,
+                                    height: 1.35,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: isLoading ? null : signIn,
-              child: const Text('Se connecter'),
-            ),
-            TextButton(
-              onPressed: isLoading ? null : signUp,
-              child: const Text('Créer un compte'),
-            ),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: isLoading ? null : signInWithGoogle,
-              icon: const Icon(Icons.login),
-              label: const Text('Continuer avec Google'),
-            ),
-            if (isLoading) ...[
-              const SizedBox(height: 12),
-              const CircularProgressIndicator(),
-            ],
-            if (error != null) ...[
-              const SizedBox(height: 8),
-              Text(error!, style: const TextStyle(color: Colors.red)),
-            ]
-          ],
+          ),
         ),
       ),
     );

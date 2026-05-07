@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="widget_card_background">#F3F4F6</color>
-    <color name="widget_text_primary">#111827</color>
-    <color name="widget_text_secondary">#6B7280</color>
-    <color name="widget_text_body">#374151</color>
-    <color name="widget_border">#E5E7EB</color>
+    <!-- Aligned with Flutter AppTheme (lexicon / teal) -->
+    <color name="widget_brand">#146B5C</color>
+    <color name="widget_brand_soft">#2A8A78</color>
+    <color name="widget_card_background">#FFFFFF</color>
+    <color name="widget_text_primary">#0F172A</color>
+    <color name="widget_text_secondary">#5A726D</color>
+    <color name="widget_text_body">#3F524D</color>
+    <color name="widget_text_muted">#7A908A</color>
+    <color name="widget_border">#E3EEEA</color>
+    <color name="widget_pos_pill_bg">#E8F4F0</color>
+    <color name="ic_launcher_background">#146B5C</color>
 </resources>
