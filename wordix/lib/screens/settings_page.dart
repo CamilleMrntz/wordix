@@ -1,14 +1,24 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class SettingsPage extends StatelessWidget {
+import '../theme/wordix_theme_controller.dart';
+
+class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
+
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
+  bool _savingTheme = false;
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final themeCtrl = WordixThemeBinding.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -19,6 +29,39 @@ class SettingsPage extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
           children: [
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+                child: SwitchListTile(
+                  title: Text(
+                    'Thème clair',
+                    style: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600, letterSpacing: -0.2),
+                  ),
+                  subtitle: Text(
+                    'Fonds très clairs et cartes blanches. Sinon, le thème sombre Wordix habituel est utilisé.',
+                    style: textTheme.bodySmall?.copyWith(color: scheme.onSurfaceVariant),
+                  ),
+                  value: themeCtrl.useClearLightTheme,
+                  onChanged: user == null || _savingTheme
+                      ? null
+                      : (v) async {
+                          setState(() => _savingTheme = true);
+                          try {
+                            await themeCtrl.setUseClearLightTheme(v);
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Impossible d’enregistrer le thème : $e')),
+                              );
+                            }
+                          } finally {
+                            if (mounted) setState(() => _savingTheme = false);
+                          }
+                        },
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
             Card(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),

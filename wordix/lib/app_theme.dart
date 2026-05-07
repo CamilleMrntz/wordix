@@ -14,6 +14,23 @@ abstract final class AppTheme {
     return _base(scheme, Brightness.light);
   }
 
+  /// Clear light theme: sage-tinted paper, not white (M3 [surfaceTint] disabled so
+  /// seed color doesn’t wash surfaces toward near-white).
+  static ThemeData lexiconClearLight() {
+    final scheme = ColorScheme.fromSeed(
+      seedColor: _seedLight,
+      brightness: Brightness.light,
+      surface: const Color(0xFFD0DFD8),
+      surfaceContainerLow: const Color(0xFFD9E8E1),
+      surfaceContainer: const Color(0xFFD3E3DC),
+      surfaceContainerHigh: const Color(0xFFC8DAD2),
+      surfaceContainerHighest: const Color(0xFFBED4CC),
+      onSurface: const Color(0xFF0A1412),
+      onSurfaceVariant: const Color(0xFF2D403B),
+    ).copyWith(surfaceTint: Colors.transparent);
+    return _base(scheme, Brightness.light);
+  }
+
   static ThemeData dark() {
     final scheme = ColorScheme.fromSeed(
       seedColor: _seedDark,
