@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html_parser;
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 
 /// One language tab: word of the day (deterministic + Firestore cache) + random word.
 class DailyWordTab extends StatefulWidget {
@@ -43,7 +44,7 @@ class _DailyWordTabState extends State<DailyWordTab> with AutomaticKeepAliveClie
   static const MethodChannel _widgetChannel = MethodChannel('wordix/widget');
 
   /// Bumps when the Spanish definition source/format changes (invalidate Firestore cache).
-  static const int _spanishDefinitionCacheVersion = 5;
+  static const int _spanishDefinitionCacheVersion = 7;
 
   final Random _random = Random();
   List<String> _words = [];
@@ -316,12 +317,16 @@ class _DailyWordTabState extends State<DailyWordTab> with AutomaticKeepAliveClie
     return '${now.year}-$mm-$dd';
   }
 
+  /// FNV-1a (32-bit) on UTF-8 — the old `hash * 31 + codeUnit` mix mapped consecutive
+  /// [dayKey] strings to consecutive indices in the alphabetically sorted word lists,
+  /// so each day looked like “the next line in the .txt file”.
   int _stableHash(String input) {
-    var hash = 0;
-    for (final unit in input.codeUnits) {
-      hash = (hash * 31 + unit) & 0x7fffffff;
+    var hash = 0x811c9dc5;
+    for (final b in utf8.encode(input)) {
+      hash ^= b;
+      hash = (hash * 0x01000193) & 0xffffffff;
     }
-    return hash;
+    return hash & 0x7fffffff;
   }
 
   Future<void> _maybePushWidget({
@@ -346,11 +351,16 @@ class _DailyWordTabState extends State<DailyWordTab> with AutomaticKeepAliveClie
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+    return SafeArea(
+      top: false,
+      left: false,
+      right: false,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
           Text(
             widget.titleDaily,
             style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -359,9 +369,17 @@ class _DailyWordTabState extends State<DailyWordTab> with AutomaticKeepAliveClie
           if (isLoadingDaily) const CircularProgressIndicator(),
           if (!isLoadingDaily && error != null) Text(error!, style: const TextStyle(color: Colors.red)),
           if (!isLoadingDaily && error == null && dailyWord != null) ...[
-            Text(
-              dailyWord!,
-              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Text(
+                    dailyWord!,
+                    style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                _GoogleWordSearchButton(word: dailyWord!),
+              ],
             ),
             if (dailyPartOfSpeech != null) ...[
               const SizedBox(height: 4),
@@ -383,9 +401,17 @@ class _DailyWordTabState extends State<DailyWordTab> with AutomaticKeepAliveClie
           const SizedBox(height: 12),
           if (isLoadingRandom) const CircularProgressIndicator(),
           if (!isLoadingRandom && randomWord != null) ...[
-            Text(
-              randomWord!,
-              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Text(
+                    randomWord!,
+                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                _GoogleWordSearchButton(word: randomWord!),
+              ],
             ),
             if (randomPartOfSpeech != null) ...[
               const SizedBox(height: 4),
@@ -402,6 +428,81 @@ class _DailyWordTabState extends State<DailyWordTab> with AutomaticKeepAliveClie
             onPressed: isLoadingDaily || isLoadingRandom ? null : _loadRandomWord,
             child: const Text('Nouveau mot'),
           ),
+        ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Opens [Google web search](https://www.google.com/search) for [word] in the system browser or Google app.
+class _GoogleWordSearchButton extends StatelessWidget {
+  const _GoogleWordSearchButton({required this.word});
+
+  final String word;
+
+  static const _gLogoUrl = 'https://www.gstatic.com/images/branding/product/2x/googleg_48dp.png';
+
+  Future<void> _open(BuildContext context) async {
+    final uri = Uri.https('www.google.com', 'search', {'q': word});
+    try {
+      final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!context.mounted) return;
+      if (!ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Impossible d\'ouvrir Google.')),
+        );
+      }
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d\'ouvrir Google.')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return IconButton(
+      tooltip: 'Rechercher sur Google',
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      constraints: const BoxConstraints(minWidth: 48, minHeight: 44),
+      onPressed: () => _open(context),
+      icon: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: Image.network(
+              _gLogoUrl,
+              width: 28,
+              height: 28,
+              fit: BoxFit.contain,
+              gaplessPlayback: true,
+              errorBuilder: (_, _, _) => Container(
+                width: 28,
+                height: 28,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: scheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  'G',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                    color: scheme.primary,
+                    height: 1,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Icon(Icons.arrow_forward, size: 22, color: scheme.onSurfaceVariant),
         ],
       ),
     );
@@ -493,7 +594,7 @@ List<String> _ddTextsFromNumberedDl(dom.Element dl) {
       if (name == 'dt') break;
     }
     if (ddEl == null) continue;
-    var text = ddEl.text.replaceAll(RegExp(r'\s+'), ' ').trim();
+    var text = _wikimediaSnippetToPlain(ddEl.innerHtml);
     text = text.replaceAll(RegExp(r'\s*\[\d+\]\s*'), ' ').trim();
     if (text.length >= 8) out.add(text);
   }
@@ -518,13 +619,13 @@ String? _spanishEtymologyFromHtmlSection(dom.Element section) {
   for (var el = h3.nextElementSibling; el != null; el = el.nextElementSibling) {
     final n = el.localName?.toLowerCase();
     if (n == 'h2' || n == 'h3' || n == 'h4' || n == 'section') break;
-    final t = el.text.replaceAll(RegExp(r'\s+'), ' ').trim();
+    final t = _wikimediaSnippetToPlain(el.innerHtml);
     if (t.isNotEmpty) {
       buf.write(t);
       buf.write(' ');
     }
   }
-  var s = buf.toString().trim();
+  var s = _wikimediaSnippetToPlain(buf.toString());
   if (s.length < 22) return null;
   return s.length > 450 ? '${s.substring(0, 450)}…' : s;
 }
@@ -643,12 +744,44 @@ List<String> _extractNumberedSpanishGlosses(String body, {required int maxCount}
   return out;
 }
 
+/// Parsoid injects `<style>` (TemplateStyles) inside senses; [Node.text] includes that CSS — skip those subtrees.
+String _visiblePlainTextFromHtmlNode(dom.Node node) {
+  if (node is dom.Text) return node.text;
+  if (node is! dom.Element) return '';
+  final el = node;
+  final name = el.localName?.toLowerCase();
+  if (name == 'style' || name == 'script' || name == 'template' || name == 'noscript' || name == 'link') {
+    return '';
+  }
+  final buf = StringBuffer();
+  for (final child in el.nodes) {
+    buf.write(_visiblePlainTextFromHtmlNode(child));
+  }
+  return buf.toString();
+}
+
+String _visiblePlainTextFromHtmlNodes(Iterable<dom.Node> nodes) {
+  final buf = StringBuffer();
+  for (final n in nodes) {
+    buf.write(_visiblePlainTextFromHtmlNode(n));
+  }
+  return buf.toString();
+}
+
+/// Wiktionary / Parsoid snippets: structured HTML → visible text; strip any leftover tags.
+String _wikimediaSnippetToPlain(String raw) {
+  final fragment = html_parser.parseFragment(raw);
+  var t = _visiblePlainTextFromHtmlNodes(fragment.nodes).replaceAll(RegExp(r'\s+'), ' ').trim();
+  if (!t.contains('<')) return t;
+  final fragment2 = html_parser.parseFragment(t);
+  t = _visiblePlainTextFromHtmlNodes(fragment2.nodes).replaceAll(RegExp(r'\s+'), ' ').trim();
+  if (!t.contains('<')) return t;
+  return t.replaceAll(RegExp(r'<[^>]*>'), '').replaceAll(RegExp(r'\s+'), ' ').trim();
+}
+
 /// Wiktionary REST often returns HTML fragments (<span>, links, etc.).
 String _wikitextToPlain(String raw) {
-  final fragment = html_parser.parseFragment(raw);
-  var t = fragment.text ?? '';
-  t = t.replaceAll(RegExp(r'\s+'), ' ').trim();
-  return t;
+  return _wikimediaSnippetToPlain(raw);
 }
 
 class _WordData {

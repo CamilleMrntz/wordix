@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../widgets/daily_word_tab.dart';
 import 'settings_page.dart';
+import 'word_history_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -20,6 +21,17 @@ class HomePage extends StatelessWidget {
         appBar: AppBar(
           title: const Text('Word of the Day'),
           actions: [
+            IconButton(
+              tooltip: 'Historique des mots du jour',
+              onPressed: () {
+                Navigator.of(context).push<void>(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const WordHistoryPage(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.emoji_events_outlined),
+            ),
             IconButton(
               tooltip: 'Paramètres',
               onPressed: () {
