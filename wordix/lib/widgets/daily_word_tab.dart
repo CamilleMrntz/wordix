@@ -4,6 +4,8 @@ import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+
+import '../services/user_stats_service.dart';
 import 'package:flutter/services.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html_parser;
@@ -61,6 +63,23 @@ class _DailyWordTabState extends State<DailyWordTab> with AutomaticKeepAliveClie
   String? randomPartOfSpeech;
   String? error;
 
+  String? _lastStatsDailyRecorded;
+  String? _lastStatsRandomRecorded;
+
+  void _recordDailyWordStats(String word) {
+    final w = word.trim();
+    if (w.isEmpty || w == _lastStatsDailyRecorded) return;
+    _lastStatsDailyRecorded = w;
+    UserStatsService.recordWordViewed(widget.langCode, w);
+  }
+
+  void _recordRandomWordStats(String word) {
+    final w = word.trim();
+    if (w.isEmpty || w == _lastStatsRandomRecorded) return;
+    _lastStatsRandomRecorded = w;
+    UserStatsService.recordWordViewed(widget.langCode, w);
+  }
+
   @override
   bool get wantKeepAlive => true;
 
@@ -111,6 +130,7 @@ class _DailyWordTabState extends State<DailyWordTab> with AutomaticKeepAliveClie
             dailyPartOfSpeech = cachedPos;
             isLoadingDaily = false;
           });
+          _recordDailyWordStats(cachedWord);
           await _maybePushWidget(
             word: cachedWord,
             partOfSpeech: cachedPos,
@@ -156,6 +176,7 @@ class _DailyWordTabState extends State<DailyWordTab> with AutomaticKeepAliveClie
           dailyPartOfSpeech = wordData.partOfSpeech;
           isLoadingDaily = false;
         });
+        _recordDailyWordStats(wordData.word);
         await _maybePushWidget(
           word: wordData.word,
           partOfSpeech: wordData.partOfSpeech,
@@ -209,6 +230,7 @@ class _DailyWordTabState extends State<DailyWordTab> with AutomaticKeepAliveClie
           randomPartOfSpeech = wordData.partOfSpeech;
           isLoadingRandom = false;
         });
+        _recordRandomWordStats(wordData.word);
         return;
       }
       if (!mounted) return;

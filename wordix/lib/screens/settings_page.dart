@@ -1,6 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../services/daily_reminder_service.dart';
 import '../theme/wordix_theme_controller.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -62,6 +64,8 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
             ),
             const SizedBox(height: 16),
+            if (user != null) _DailyReminderCard(scheme: scheme, textTheme: textTheme),
+            if (user != null) const SizedBox(height: 16),
             Card(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
@@ -136,3 +140,131 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 }
+
+class _DailyReminderCard extends StatefulWidget {
+  const _DailyReminderCard({required this.scheme, required this.textTheme});
+
+  final ColorScheme scheme;
+  final TextTheme textTheme;
+
+  @override
+  State<_DailyReminderCard> createState() => _DailyReminderCardState();
+}
+
+class _DailyReminderCardState extends State<_DailyReminderCard> {
+  bool _busy = false;
+
+  Future<void> _persist({
+    required String uid,
+    bool? enabled,
+    int? hour,
+    int? minute,
+  }) async {
+    setState(() => _busy = true);
+    try {
+      final map = <String, Object?>{
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+      if (enabled != null) map['dailyReminderEnabled'] = enabled;
+      if (hour != null) map['dailyReminderHour'] = hour;
+      if (minute != null) map['dailyReminderMinute'] = minute;
+      await FirebaseFirestore.instance.collection('users').doc(uid).set(map, SetOptions(merge: true));
+      await DailyReminderService.syncFromRemote();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser!;
+    return Card(
+      child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+        stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
+        builder: (context, snap) {
+          final data = snap.data?.data();
+          final enabled = data?['dailyReminderEnabled'] == true;
+          final h = (data?['dailyReminderHour'] as num?)?.toInt() ?? 9;
+          final m = (data?['dailyReminderMinute'] as num?)?.toInt() ?? 0;
+          final timeLabel =
+              '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(4, 4, 4, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SwitchListTile(
+                  title: Text(
+                    'Rappel quotidien',
+                    style: widget.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Notification locale à l’heure choisie (Android / iOS).',
+                    style: widget.textTheme.bodySmall?.copyWith(color: widget.scheme.onSurfaceVariant),
+                  ),
+                  value: enabled,
+                  onChanged: _busy
+                      ? null
+                      : (v) async {
+                          if (v) {
+                            final ok = await DailyReminderService.requestOsPermission();
+                            if (!context.mounted) return;
+                            if (!ok) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Permission de notification refusée.'),
+                                ),
+                              );
+                              return;
+                            }
+                          }
+                          try {
+                            await _persist(uid: user.uid, enabled: v);
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Erreur : $e')),
+                              );
+                            }
+                          }
+                        },
+                ),
+                ListTile(
+                  enabled: !_busy,
+                  leading: Icon(Icons.schedule_outlined, color: widget.scheme.primary),
+                  title: const Text('Heure du rappel'),
+                  subtitle: Text(timeLabel),
+                  onTap: () async {
+                    final picked = await showTimePicker(
+                      context: context,
+                      initialTime: TimeOfDay(hour: h, minute: m),
+                    );
+                    if (picked == null || !context.mounted) return;
+                    try {
+                      await _persist(
+                        uid: user.uid,
+                        hour: picked.hour,
+                        minute: picked.minute,
+                      );
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Erreur : $e')),
+                        );
+                      }
+                    }
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
